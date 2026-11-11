@@ -1,0 +1,13 @@
+{
+  "name": "why-people-leave",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test",
+    "check": "node --check web/app.js && node --check web/domain.js && node --check web/data.js"
+  },
+  "engines": { "node": ">=20" }
+}
