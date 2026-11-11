@@ -40,3 +40,7 @@ test('CSV quotes separators, newlines, quotes and neutralizes formulas',()=>{
   const r={...seed().exits[0],comment:'=HYPERLINK("bad");\nline'};const out=csv([r]);
   assert.ok(out.startsWith('\ufeff'));assert.ok(out.includes('"\'=HYPERLINK(""bad"");\nline"'));
 });
+test('backup rejects HTML in identifiers and mismatched evidence keys',()=>{
+  const s=seed();s.exits[0].id='x" onclick="alert(1)';assert.equal(validateState(s),false);
+  const a=seed();a.actions[0].key='Other|Something';assert.equal(validateState(a),false);
+});
