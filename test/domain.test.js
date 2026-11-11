@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { seed } from '../web/data.js';
-import { tenure, isEarly, summarize, insights, filterExits, validateExit, csv, validateState, validDate } from '../web/domain.js';
+import { tenure, isEarly, summarize, insights, filterExits, validateExit, csv, validateState, validDate, experimentDefaults, validateExperiment, migrateState, compareReasons } from '../web/domain.js';
 
 test('seed matches brief: 54 exits, 18 early, valid unique records', () => {
   const state=seed(); assert.equal(validateState(state),true);
@@ -43,4 +43,30 @@ test('CSV quotes separators, newlines, quotes and neutralizes formulas',()=>{
 test('backup rejects HTML in identifiers and mismatched evidence keys',()=>{
   const s=seed();s.exits[0].id='x" onclick="alert(1)';assert.equal(validateState(s),false);
   const a=seed();a.actions[0].key='Other|Something';assert.equal(validateState(a),false);
+});
+test('legacy migration preserves user content and adds editable pilot plan',()=>{
+  const legacy=seed();legacy.version=1;legacy.actions[0].title='Моя задача';legacy.actions[0].due='2027-01-01';
+  for(const field of Object.keys(experimentDefaults('Обучение')))delete legacy.actions[0][field];
+  const updated=migrateState(legacy);assert.equal(updated.version,2);assert.equal(updated.actions[0].title,'Моя задача');
+  assert.equal(updated.actions[0].cohortSize,5);assert.equal(updated.actions[0].reviewDate,'2027-01-01');
+  assert.deepEqual(updated.exits,legacy.exits);assert.equal(validateState(updated),true);assert.equal(legacy.version,1);
+});
+test('experiment validates group size, sequence and evidence for outcome',()=>{
+  const a={due:'2026-11-25',...experimentDefaults('График')};assert.equal(validateExperiment(a),null);
+  for(const cohortSize of [0,101,2.5,NaN,'5'])assert.ok(validateExperiment({...a,cohortSize}));
+  assert.ok(validateExperiment({...a,reviewDate:'2026-11-24'}));
+  assert.ok(validateExperiment({...a,outcome:'Есть улучшение'}));
+  assert.equal(validateExperiment({...a,outcome:'Недостаточно данных',resultNote:'Пока вышли только двое из пяти.'}),null);
+});
+test('version 2 backup must contain valid experiment data',()=>{
+  const s=seed();s.actions[0].cohortSize=-3;assert.equal(validateState(s),false);
+  assert.throws(()=>migrateState(s));
+});
+test('reason comparison uses separate group denominators and guards small samples',()=>{
+  const c=compareReasons(seed().exits);assert.equal(c.earlyTotal,18);assert.equal(c.lateTotal,36);assert.equal(c.sufficient,true);
+  const r=c.reasons.find(r=>r.reason==='График');assert.equal(r.earlyCount,5);assert.equal(r.earlyPercent,28);assert.equal(r.lateCount,0);assert.equal(r.latePercent,0);
+  assert.equal(compareReasons(seed().exits.slice(0,18)).sufficient,false);assert.equal(compareReasons([]).sufficient,false);
+});
+test('demo schedule evidence has five different voices without changing counts',()=>{
+  const rows=seed().exits.filter(r=>isEarly(r)&&r.reason==='График');assert.equal(rows.length,5);assert.equal(new Set(rows.map(r=>r.comment)).size,5);
 });
