@@ -63,4 +63,8 @@ npm run build
 
 ## Публикация
 
-[Рабочее демо](https://pochemu-uhodyat-bitrix.incognitor29.chatgpt.site) опубликовано через Sites. По запросу владельца включён публичный доступ для проверки тестового. `.openai/hosting.json` содержит идентификатор проекта и каталог сборки. Публикация кода в GitHub сама по себе не включает GitHub Pages.
+[Рабочее демо на GitHub Pages](https://alexandrpoge.github.io/Bitrix_test/).
+
+Публикация настроена в `.github/workflows/pages.yml`: при каждом push в `main` проходят тесты, проверка синтаксиса и сборка, затем `dist/` разворачивается в GitHub Pages. В настройках репозитория **Settings → Pages → Source** должен быть выбран **GitHub Actions**. Можно также запустить workflow вручную через **Actions → Deploy GitHub Pages → Run workflow**.
+
+По запросу владельца публичный доступ к прежнему демо Sites закрыт, конфигурация Sites удалена из исходников. Изменения в этом репозитории больше не публикуются на Sites.
